@@ -1,11 +1,12 @@
 const path = require("path");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin"); // 🔥 追加
 
 module.exports = {
   mode: "production",
   entry: "./popup.jsx",
   output: {
-    path: path.resolve(__dirname),
     filename: "popup.js",
+    path: path.resolve(__dirname, "./dist"),
   },
   module: {
     rules: [
@@ -19,8 +20,15 @@ module.exports = {
           },
         },
       },
+      {
+        test: /\.css$/, // 🔥 CSSを外部ファイルに出力する設定
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
+      },
     ],
   },
+  plugins: [
+    new MiniCssExtractPlugin({ filename: "popup.css" }), // 🔥 `dist/popup.css` に出力
+  ],
   resolve: {
     extensions: [".js", ".jsx"],
   },

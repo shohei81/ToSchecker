@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
+import "./popup.css";
 
 function Popup() {
   const [result, setResult] = useState(null);
@@ -7,7 +8,9 @@ function Popup() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    chrome.storage.local.get(["analysisResult"], (data) => {
+    chrome.storage.local.get(["analysisResult"], data => {
+      console.log("🧐 ポップアップで取得した解析結果:", data);
+
       if (chrome.runtime.lastError) {
         setError(chrome.runtime.lastError);
       } else {
@@ -18,19 +21,24 @@ function Popup() {
   }, []);
 
   if (loading) {
-    return <div>読み込み中...</div>;
+    return <div className="loading">読み込み中...</div>;
   }
 
   if (error) {
-    return <div>エラー: {error.toString()}</div>;
+    return <div className="error">エラー: {error.toString()}</div>;
   }
 
   return (
-    <div style={{ padding: "10px", fontFamily: "sans-serif" }}>
-      <h2>解析結果</h2>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{result?.choices?.[0]?.message?.content || "データなし"}</pre>
+    <div className="popup-container">
+      <div className="popup-header">
+        <h2>🔍 解析結果</h2>
+        <button className="close-btn" onClick={() => window.close()}>✖</button>
+      </div>
+      <div className="popup-content">
+        <pre>{result?.choices?.[0]?.message?.content || "データなし"}</pre>
+      </div>
     </div>
   );
 }
 
-ReactDOM.render(<Popup />, document.getElementById("root"));
+ReactDOM.createRoot(document.getElementById("root")).render(<Popup />);
