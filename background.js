@@ -1,13 +1,16 @@
-// background.js (Manifest V3の場合、Service Workerとして登録)
+// background.js (Manifest V3 の Service Worker として実装)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'TOS_TEXT') {
       const tosText = message.payload;
       
-      // LLM APIに利用規約のテキストを送信して解析結果を取得
       analyzeTermsOfService(tosText)
         .then(apiResponse => {
           console.log("LLM APIからの応答:", apiResponse);
-          // 必要に応じて、ここで結果をchrome.storage等に保存し、popup等で参照できるようにする
+          // 解析結果を chrome.storage に保存
+          chrome.storage.local.set({ analysisResult: apiResponse }, () => {
+            console.log("解析結果を保存しました。");
+          });
+          // sendResponse でも結果を返す
           sendResponse({ success: true, data: apiResponse });
         })
         .catch(error => {
@@ -15,24 +18,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: false, error: error.toString() });
         });
         
-      // 非同期でのレスポンスを許可
+      // 非同期処理のため true を返す
       return true;
     }
   });
   
   /**
    * LLM API（例: OpenAI ChatCompletion API）を呼び出して利用規約を解析する関数
-   * @param {string} text 利用規約のテキスト
-   * @returns {Promise<object>} APIからの解析結果
    */
   async function analyzeTermsOfService(text) {
-    // ※以下はOpenAI APIの例です。利用するLLMに合わせてエンドポイントやパラメータを変更してください。
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    const apiKey = 'YOUR_OPENAI_API_KEY'; // セキュリティに注意！（本番ではより安全な方法で管理すること）
+    const apiKey = 'YOUR_OPENAI_API_KEY'; // ※本番ではセキュアな方法で管理すること
   
-    // LLMに渡すリクエストペイロードの組み立て
     const requestData = {
-      model: "gpt-4", // または適切なモデル名
+      model: "gpt-4", // または利用するモデル名
       messages: [
         { "role": "system", "content": "あなたは利用規約の解析の専門家です。利用規約の文章から消費者に不利な条項を見つけ、簡潔に説明してください。" },
         { "role": "user", "content": text }
@@ -53,7 +52,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!response.ok) {
       throw new Error(`LLM API エラー: ${response.statusText}`);
     }
-    const data = await response.json();
-    return data;
+    return await response.json();
   }
   
