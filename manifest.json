@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "利用規約解析拡張機能",
+    "version": "1.0",
+    "description": "ページ上の利用規約を解析し、消費者に不利な条項を検出するChrome拡張機能です。",
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+      }
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+      }
+    }
+  }
+  
