@@ -34,4 +34,9 @@
     if (tosText) {
         sendTextToBackground(tosText);
     }
+
+    // ログの確認
+    const extractedText = extractText();
+    console.log("取得したテキスト:", extractedText);
+
 })();
