@@ -1,20 +1,31 @@
 // background.js (Manifest V3 の Service Worker として実装)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'TOS_TEXT') {
-      const tosText = message.payload;
-      
-      analyzeTermsOfService(tosText)
+      console.log("📩 受信した利用規約テキスト:", message.payload);
+  
+      analyzeTermsOfService(message.payload)
         .then(apiResponse => {
-          console.log("LLM APIからの応答:", apiResponse);
-          // 解析結果を chrome.storage に保存
+          console.log("📨 LLM API のレスポンス:", apiResponse);
+  
+          if (!apiResponse || Object.keys(apiResponse).length === 0) {
+            console.error("❌ APIのレスポンスが空です！");
+          }
+  
+          // `chrome.storage.local.set()` のデバッグ
+          console.log("📝 `chrome.storage.local.set()` にデータを保存する:", apiResponse);
           chrome.storage.local.set({ analysisResult: apiResponse }, () => {
-            console.log("解析結果を保存しました。");
+            console.log("✅ 解析結果を保存しました:", apiResponse);
+  
+            // 保存直後にデータを確認
+            chrome.storage.local.get(["analysisResult"], data => {
+              console.log("🧐 `chrome.storage.local.get()` 確認:", data);
+            });
           });
-          // sendResponse でも結果を返す
+  
           sendResponse({ success: true, data: apiResponse });
         })
         .catch(error => {
-          console.error("解析エラー:", error);
+          console.error("⚠️ APIリクエストエラー:", error);
           sendResponse({ success: false, error: error.toString() });
         });
         
@@ -28,30 +39,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
    */
   async function analyzeTermsOfService(text) {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
-    const apiKey = 'YOUR_OPENAI_API_KEY'; // ※本番ではセキュアな方法で管理すること
+    const apiKey = ''; // 🔥 ここに正しいAPIキーをセットする
   
     const requestData = {
-      model: "gpt-4", // または利用するモデル名
+      model: "gpt-4o-mini",
       messages: [
-        { "role": "system", "content": "あなたは利用規約の解析の専門家です。利用規約の文章から消費者に不利な条項を見つけ、簡潔に説明してください。" },
+        { "role": "system", "content": "あなたは利用規約の解析の専門家です。" },
         { "role": "user", "content": text }
       ],
       max_tokens: 500,
       temperature: 0.7,
     };
   
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(requestData)
-    });
+    console.log("🚀 LLM API に送信するデータ:", requestData);
   
-    if (!response.ok) {
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(requestData)
+      });
+  
+      if (!response.ok) {
+        console.error("⚠️ API エラー:", response.status, response.statusText);
+        const errorData = await response.json();
+        console.error("🛑 詳細なエラーレスポンス:", errorData);
       throw new Error(`LLM API エラー: ${response.statusText}`);
+      throw new Error(`LLM API エラー: ${response.statusText}`);
+        throw new Error(`LLM API エラー: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log("📨 LLM APIのレスポンス:", data);
+      return data;
+    } catch (error) {
+      console.error("🔥 APIリクエスト失敗:", error);
+      return null; // 🔥 ここで `null` を返すと `chrome.storage.local.set()` が動作しない
     }
-    return await response.json();
-  }
+  }  
   
