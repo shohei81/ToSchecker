@@ -26,10 +26,10 @@
       }
     },
     "web_accessible_resources": [
-        {
-          "resources": ["popup.css"],
-          "matches": ["<all_urls>"]
-        }
-      ]
+      {
+        "resources": ["dist/popup.css", "popup.html"],
+        "matches": ["*://*/*"]
+      }
+    ]
   }
   
